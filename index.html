@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BalikSuki Loyalty Rewards</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- HTML5 QR Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- QRCode.js Generator -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+  <!-- Navigation Bar -->
+  <nav class="bg-slate-800 border-b border-slate-700 px-4 md:px-6 py-4 flex justify-between items-center shadow-lg">
+    <div class="flex items-center space-x-3">
+      <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-bold">
+        <i class="fa-solid fa-arrows-rotate text-xl"></i>
+      </div>
+      <div>
+        <span class="text-lg font-bold tracking-wide block leading-none text-emerald-400">BalikSuki</span>
+        <span class="text-[10px] text-slate-400 font-medium">SME Loyalty System</span>
+      </div>
+    </div>
+    <div class="flex space-x-1 sm:space-x-2 bg-slate-900 p-1 rounded-xl border border-slate-700">
+      <button id="btnStaffView" onclick="switchView('staff')" class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-emerald-500 text-slate-900 shadow-md">
+        <i class="fa-solid fa-cash-register mr-1"></i> Cashier Terminal
+      </button>
+      <button id="btnCustomerView" onclick="switchView('customer')" class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-slate-200">
+        <i class="fa-solid fa-qrcode mr-1"></i> BalikSuki Card
+      </button>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto p-4 md:p-6">
+
+    <!-- Loading Indicator Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center space-y-3">
+      <i class="fa-solid fa-circle-notch fa-spin text-emerald-400 text-4xl"></i>
+      <span id="loadingText" class="text-sm font-semibold text-slate-200 tracking-wider">Syncing with Google Sheets...</span>
+    </div>
+
+    <!-- ================= CASHIER / STORE OWNER VIEW ================= -->
+    <section id="staffSection" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Input Option 1: QR Scanner -->
+        <!-- QR Scanner Container with Native File Backup -->
+<div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+  <div>
+    <h2 class="text-lg font-bold mb-1 flex items-center gap-2">
+      <i class="fa-solid fa-qrcode text-emerald-400"></i> Scan BalikSuki QR
+    </h2>
+    <p class="text-xs text-slate-400 mb-4">Live video or upload photo of customer QR code.</p>
+    
+    <div id="qr-reader" class="overflow-hidden rounded-xl border-2 border-dashed border-slate-600 bg-slate-950"></div>
+  </div>
+  
+  <div class="space-y-2 mt-4">
+    <button id="btnToggleCamera" onclick="toggleCamera()" class="w-full py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2">
+      <i class="fa-solid fa-camera"></i> Start Live Scanner
+    </button>
+    
+    <!-- Native Camera Capture Input (Bypasses WebView Camera Blocks) -->
+    <label class="w-full py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-600 rounded-xl font-semibold text-xs cursor-pointer flex items-center justify-center gap-2">
+      <i class="fa-solid fa-file-image text-emerald-400"></i> Upload or Snap QR Photo
+      <input type="file" id="qr-file-input" accept="image/*" capture="environment" class="hidden" onchange="scanQRFromFile(this)"/>
+    </label>
+  </div>
+</div>
+
+        <!-- Input Option 2: PH Mobile Search -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
+          <div>
+            <h2 class="text-lg font-bold mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-mobile-screen-button text-emerald-400"></i> PH Mobile Search
+            </h2>
+            <p class="text-xs text-slate-400 mb-4">Enter 11-digit mobile number to look up or register Suki.</p>
+            
+            <form onsubmit="handlePhoneLookup(event)" class="space-y-4">
+              <div>
+                <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold block mb-1">Mobile No. (GCash/Maya)</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-3 text-slate-400 text-sm font-semibold">+63</span>
+                  <input type="tel" id="inputPhone" maxlength="11" placeholder="09171234567" class="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 pl-12 pr-4 text-slate-100 focus:outline-none focus:border-emerald-500 font-mono tracking-wider transition-all" required/>
+                </div>
+              </div>
+              <button type="submit" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-magnifying-glass"></i> Find Suki Profile
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Quick Register Panel (Prompted if Phone Not Found) -->
+      <div id="registerPanel" class="hidden bg-slate-800 border-2 border-amber-500/60 rounded-2xl p-6 shadow-2xl transition-all">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-700">
+          <div class="bg-amber-500/20 text-amber-400 p-2.5 rounded-xl border border-amber-500/30">
+            <i class="fa-solid fa-user-plus text-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-100">BalikSuki Number Not Found</h3>
+            <p class="text-xs text-slate-400">Register <span id="regPhoneDisplay" class="font-mono text-amber-400 font-bold">---</span> as a new member now.</p>
+          </div>
+        </div>
+
+        <form onsubmit="handleRegisterCustomer(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div class="md:col-span-2">
+            <label class="text-xs uppercase tracking-wider text-slate-400 font-semibold block mb-1">Customer Full Name</label>
+            <input type="text" id="inputRegName" placeholder="e.g. Maria Santos" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-emerald-500 text-sm" required/>
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i> Register & Save Suki
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Active Client Profile Panel -->
+      <div id="activeClientPanel" class="hidden bg-slate-800 border border-emerald-500/40 rounded-2xl p-6 shadow-2xl transition-all">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 pb-6 border-b border-slate-700">
+          <div>
+            <div class="flex items-center gap-3">
+              <h3 id="panelClientName" class="text-2xl font-bold">---</h3>
+              <span id="panelClientTier" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">SUKI</span>
+            </div>
+            <p class="text-sm text-slate-400 mt-1">BalikSuki ID: <span id="panelClientID" class="font-mono text-slate-200">#0000</span> | Mobile: <span id="panelClientPhone" class="text-slate-200">--</span></p>
+          </div>
+
+          <div class="bg-slate-950 px-5 py-3 rounded-xl border border-slate-700 text-right">
+            <span class="text-xs text-slate-400 uppercase tracking-wider block">BalikSuki Points</span>
+            <span id="panelClientPoints" class="text-3xl font-extrabold text-emerald-400">0</span> <span class="text-xs text-slate-400">PTS</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+            <h4 class="text-sm font-semibold text-slate-300">Award Points (₱100 = 1 Point)</h4>
+            <div class="flex gap-2">
+              <div class="relative w-full">
+                <span class="absolute left-3 top-2 text-slate-400 font-bold">₱</span>
+                <input type="number" id="inputAddPoints" placeholder="Purchase Amount" class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-sm focus:outline-none focus:border-emerald-500"/>
+              </div>
+              <button onclick="addPoints()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
+                Add Points
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+            <h4 class="text-sm font-semibold text-slate-300">Redeem Perks</h4>
+            <div class="flex gap-2">
+              <select id="selectReward" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+                <option value="15">₱50 Off Store Discount (15 pts)</option>
+                <option value="30">Free Drink / Item (30 pts)</option>
+                <option value="50">₱200 GCash / Maya Voucher (50 pts)</option>
+              </select>
+              <button onclick="redeemReward()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition-all whitespace-nowrap">
+                Redeem
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CUSTOMER SUKI CARD VIEW ================= -->
+    <section id="customerSection" class="hidden max-w-md mx-auto space-y-6">
+
+      <!-- Physical Digital Card Layout -->
+      <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 border border-emerald-500/40 rounded-3xl p-6 shadow-2xl overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <span class="text-[10px] tracking-widest text-emerald-400 font-bold uppercase">Digital Loyalty Pass</span>
+            <h3 class="text-xl font-bold tracking-wide mt-0.5 text-slate-100">BalikSuki Rewards</h3>
+          </div>
+          <span id="custTierBadge" class="bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-xs font-bold px-3 py-1 rounded-full uppercase">
+            Suki Member
+          </span>
+        </div>
+
+        <!-- Generated QR Code Container -->
+        <div class="bg-white p-4 rounded-2xl shadow-inner w-fit mx-auto my-2 border-4 border-slate-800/80">
+          <div id="qrcode"></div>
+        </div>
+
+        <div class="text-center mt-3">
+          <span class="text-[10px] uppercase text-slate-400 tracking-wider block">BalikSuki ID</span>
+          <p id="custRewardsID" class="text-base font-mono font-bold tracking-widest text-emerald-400">---</p>
+        </div>
+
+        <div class="mt-6 pt-4 border-t border-slate-700/60 flex justify-between items-end">
+          <div>
+            <span class="text-[10px] text-slate-400 block uppercase">Customer Name</span>
+            <span id="custName" class="font-bold text-slate-100">---</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-slate-400 block uppercase">Points Balance</span>
+            <span id="custPoints" class="text-2xl font-black text-emerald-400">0</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ================= REGISTRATION SUCCESS MODAL ================= -->
+    <div id="registrationModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-emerald-500/50 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative text-center space-y-4">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Suki Registered!</span>
+          </div>
+          <button onclick="closeRegistrationModal()" class="text-slate-400 hover:text-slate-200 text-lg">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-300">Show this screen to the customer to let them take a photo of their new <b>BalikSuki QR Pass</b>.</p>
+
+        <!-- Card Preview -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 border border-emerald-500/40 rounded-2xl p-5 text-left shadow-lg">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <span class="text-[9px] tracking-widest text-emerald-400 font-bold uppercase block">Digital Loyalty Pass</span>
+              <h4 class="text-sm font-bold text-slate-100">BalikSuki Card</h4>
+            </div>
+            <span id="modalCustTier" class="bg-emerald-500/20 border border-emerald-400 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+              NEW SUKI
+            </span>
+          </div>
+
+          <!-- Generated Modal QR Code Container -->
+          <div class="bg-white p-3 rounded-xl shadow-inner w-fit mx-auto my-2 border-2 border-slate-800">
+            <div id="modalQrcode"></div>
+          </div>
+
+          <div class="text-center mt-2">
+            <span class="text-[9px] uppercase text-slate-400 tracking-wider block">BalikSuki ID</span>
+            <p id="modalCustID" class="text-sm font-mono font-bold tracking-widest text-emerald-400">---</p>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex justify-between items-end">
+            <div>
+              <span class="text-[9px] text-slate-400 block uppercase">Name</span>
+              <span id="modalCustName" class="font-bold text-xs text-slate-100">---</span>
+            </div>
+            <div class="text-right">
+              <span class="text-[9px] text-slate-400 block uppercase">Mobile No.</span>
+              <span id="modalCustPhone" class="font-bold text-xs text-slate-100">---</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <button onclick="closeRegistrationModal()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> Continue to Transaction
+        </button>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ================= CONFIGURATION =================
+    // Paste your Google Apps Script Web App URL below
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwoKR8O_TxH97OYRF3Fq2tid4tOIlLl90vTJ8um-FRS75BoMBkewszKEyyZ-VmuM99YHA/exec";
+
+    let activeClient = null;
+    let html5QrcodeScanner = null;
+    let pendingPhoneNumber = "";
+
+    // Helper: Show/Hide Loader
+    function setLoading(isLoading, text = "Syncing with Google Sheets...") {
+      const loader = document.getElementById('loadingOverlay');
+      document.getElementById('loadingText').innerText = text;
+      if (isLoading) loader.classList.remove('hidden');
+      else loader.classList.add('hidden');
+    }
+
+    // View Switching
+    function switchView(view) {
+      const staffSec = document.getElementById('staffSection');
+      const custSec = document.getElementById('customerSection');
+      const btnStaff = document.getElementById('btnStaffView');
+      const btnCust = document.getElementById('btnCustomerView');
+
+      if (view === 'staff') {
+        staffSec.classList.remove('hidden');
+        custSec.classList.add('hidden');
+        btnStaff.className = "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-emerald-500 text-slate-900 shadow-md";
+        btnCust.className = "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-slate-200";
+      } else {
+        staffSec.classList.add('hidden');
+        custSec.classList.remove('hidden');
+        btnCust.className = "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-emerald-500 text-slate-900 shadow-md";
+        btnStaff.className = "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-slate-200";
+        if (activeClient) renderCustomerPass(activeClient);
+      }
+    }
+
+    // Lookup Suki profile from Google Sheets
+    async function loadClientProfile(searchQuery) {
+      if (SCRIPT_URL === "YOUR_DEPLOYED_GOOGLE_APPS_SCRIPT_URL_HERE") {
+        return alert("Please update SCRIPT_URL with your actual Apps Script deployment URL.");
+      }
+
+      setLoading(true, "Searching BalikSuki database...");
+      document.getElementById('registerPanel').classList.add('hidden');
+      
+      try {
+        const requestUrl = `${SCRIPT_URL}?action=lookup&query=${encodeURIComponent(searchQuery)}`;
+        const response = await fetch(requestUrl, { method: "GET", redirect: "follow" });
+        const result = await response.json();
+        
+        if (result.success) {
+          activeClient = result.customer;
+          document.getElementById('panelClientName').innerText = activeClient.name;
+          document.getElementById('panelClientID').innerText = activeClient.id;
+          document.getElementById('panelClientPhone').innerText = activeClient.phone;
+          document.getElementById('panelClientTier').innerText = activeClient.tier || "SUKI";
+          document.getElementById('panelClientPoints').innerText = activeClient.points;
+          document.getElementById('activeClientPanel').classList.remove('hidden');
+        } else {
+          document.getElementById('activeClientPanel').classList.add('hidden');
+          pendingPhoneNumber = searchQuery;
+          document.getElementById('regPhoneDisplay').innerText = searchQuery;
+          document.getElementById('registerPanel').classList.remove('hidden');
+        }
+      } catch (err) {
+        alert("Error connecting to Google Sheets. Check your deployment URL and permissions.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+   // Register New Customer Action (Updated for Option 1 Modal Popup)
+    async function handleRegisterCustomer(e) {
+      e.preventDefault();
+      const customerName = document.getElementById('inputRegName').value.trim();
+      if (!customerName) return alert("Please enter customer name.");
+
+      setLoading(true, "Registering BalikSuki member...");
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            action: "REGISTER",
+            name: customerName,
+            phone: pendingPhoneNumber
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          activeClient = result.customer;
+          document.getElementById('registerPanel').classList.add('hidden');
+          document.getElementById('inputRegName').value = "";
+          
+          // Populate Cashier Profile Panel
+          document.getElementById('panelClientName').innerText = activeClient.name;
+          document.getElementById('panelClientID').innerText = activeClient.id;
+          document.getElementById('panelClientPhone').innerText = activeClient.phone;
+          document.getElementById('panelClientTier').innerText = activeClient.tier;
+          document.getElementById('panelClientPoints').innerText = activeClient.points;
+          document.getElementById('activeClientPanel').classList.remove('hidden');
+
+          // Pop up Modal for Customer Photo Capture (Option 1)
+          openRegistrationModal(activeClient);
+        } else {
+          alert("Could not register customer to Google Sheets.");
+        }
+      } catch (err) {
+        alert("Error saving customer to Google Sheets.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Function to render and open the registration popup modal
+    function openRegistrationModal(client) {
+      document.getElementById('modalCustID').innerText = client.id;
+      document.getElementById('modalCustName').innerText = client.name;
+      document.getElementById('modalCustPhone').innerText = client.phone;
+      document.getElementById('modalCustTier').innerText = client.tier || "NEW SUKI";
+
+      // Render Modal QR Code
+      const modalQrElem = document.getElementById("modalQrcode");
+      modalQrElem.innerHTML = "";
+      new QRCode(modalQrElem, {
+        text: client.id,
+        width: 120,
+        height: 120,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('registrationModal').classList.remove('hidden');
+    }
+
+    // Close Modal helper
+    function closeRegistrationModal() {
+      document.getElementById('registrationModal').classList.add('hidden');
+    }
+
+    // Phone Search Handler
+    function handlePhoneLookup(e) {
+      e.preventDefault();
+      const phoneInput = document.getElementById('inputPhone').value.trim();
+      loadClientProfile(phoneInput);
+    }
+
+    // Add Points & Sync with Google Sheets
+    async function addPoints() {
+      if (!activeClient) return;
+      const amt = parseFloat(document.getElementById('inputAddPoints').value);
+      if (isNaN(amt) || amt <= 0) return alert("Enter a valid purchase amount in Pesos (₱).");
+
+      const pointsEarned = Math.floor(amt / 100);
+      if (pointsEarned === 0) return alert("Minimum purchase of ₱100 required to earn 1 BalikSuki point.");
+
+      setLoading(true, "Adding points...");
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ 
+            id: activeClient.id, 
+            type: "ADD", 
+            amount: amt, 
+            points: pointsEarned 
+          })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          activeClient.points = result.newPoints;
+          document.getElementById('panelClientPoints').innerText = result.newPoints;
+          document.getElementById('inputAddPoints').value = "";
+          alert(`Added ${pointsEarned} points! Updated in Google Sheets.`);
+        } else {
+          alert("Failed to update points in Google Sheets.");
+        }
+      } catch (err) {
+        alert("Transaction error connecting to Google Sheets.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Redeem Perk & Sync with Google Sheets
+    async function redeemReward() {
+      if (!activeClient) return;
+      const select = document.getElementById('selectReward');
+      const cost = parseInt(select.value);
+      const rewardName = select.options[select.selectedIndex].text;
+
+      if (activeClient.points < cost) {
+        return alert("Kulangan ang BalikSuki points para sa reward na ito.");
+      }
+
+      setLoading(true, "Redeeming reward...");
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify({ 
+            id: activeClient.id, 
+            type: "REDEEM", 
+            amount: 0, 
+            points: cost 
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          activeClient.points = result.newPoints;
+          document.getElementById('panelClientPoints').innerText = result.newPoints;
+          alert(`Redemption successful for ${rewardName}! Deducted ${cost} points.`);
+        } else {
+          alert("Failed to redeem points in Google Sheets.");
+        }
+      } catch (err) {
+        alert("Transaction error connecting to Google Sheets.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Render Customer Digital Card
+    function renderCustomerPass(client) {
+      document.getElementById('custRewardsID').innerText = client.id;
+      document.getElementById('custName').innerText = client.name;
+      document.getElementById('custPoints').innerText = client.points;
+      document.getElementById('custTierBadge').innerText = client.tier || "SUKI MEMBER";
+
+      const qrElem = document.getElementById("qrcode");
+      qrElem.innerHTML = "";
+      new QRCode(qrElem, {
+        text: client.id,
+        width: 140,
+        height: 140,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+    }
+
+    // Camera QR Scanner
+    // Enhanced QR Scanner Logic with Camera Selection & Error Handling
+// Reliable QR Scanner Logic
+let html5QrcodeInstance = null;
+
+async function toggleCamera() {
+  const btn = document.getElementById('btnToggleCamera');
+
+  if (html5QrcodeInstance && html5QrcodeInstance.isScanning) {
+    await html5QrcodeInstance.stop();
+    html5QrcodeInstance.clear();
+    btn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Live Scanner';
+    return;
+  }
+
+  // Clear previous instance if any
+  document.getElementById('qr-reader').innerHTML = "";
+  html5QrcodeInstance = new Html5Qrcode("qr-reader");
+
+  const config = { fps: 10, qrbox: { width: 200, height: 200 } };
+
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Accessing Camera...';
+
+  // Attempt live stream with environment facing mode
+  html5QrcodeInstance.start(
+    { facingMode: "environment" },
+    config,
+    (decodedText) => {
+      // Success callback
+      loadClientProfile(decodedText);
+      html5QrcodeInstance.stop().then(() => {
+        btn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Live Scanner';
+      });
+    },
+    (errorMessage) => { /* scanning continuous frame error */ }
+  ).catch(err => {
+    btn.innerHTML = '<i class="fa-solid fa-camera"></i> Start Live Scanner';
+    console.error("Camera error:", err);
+    alert("Camera block detected: Please ensure site is hosted on HTTPS or use the 'Upload or Snap QR Photo' button below.");
+  });
+}
+
+// Fallback: File upload/camera snap
+function scanQRFromFile(input) {
+  if (input.files.length === 0) return;
+  const imageFile = input.files[0];
+  const html5QrCode = new Html5Qrcode("qr-reader");
+
+  setLoading(true, "Processing QR Image...");
+  html5QrCode.scanFile(imageFile, true)
+    .then(decodedText => {
+      loadClientProfile(decodedText);
+    })
+    .catch(err => {
+      alert("Could not read QR code from image. Please try taking a clearer photo.");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}
+  </script>
+</body>
+</html>
